@@ -89,7 +89,15 @@ class WindowsKeyboardController:
         except Exception:
             return False
 
-
+    def is_alt_pressed(self) -> bool:
+        try:
+            return keyboard.is_pressed('alt')
+        except ImportError:
+            logger.critical("FATAL: The 'keyboard' library failed to import a backend. This often means it needs to be run with administrator/sudo privileges.")
+            sys.exit(1)
+        except Exception:
+            return False
+        
 class MacOSKeyboardController:
     def __init__(self, hotkey_str):
         self.hotkey_str = hotkey_str.lower()
@@ -149,12 +157,13 @@ class InputLoop(threading.Thread):
             self.keyboard_controller = WindowsKeyboardController(self.hotkey_str)
 
         self.started_auto_mode = False
+        self._was_alt_pressed = False
 
     def run(self):
         logger.debug("Input thread started.")
         last_mouse_pos = (0, 0)
         hotkey_was_pressed = False
-
+        alt_was_pressed = False
         while self.shared_state.running:
             if not config.is_enabled:
                 time.sleep(0.1)
@@ -163,13 +172,19 @@ class InputLoop(threading.Thread):
                 current_mouse_pos = self.mouse_controller.position
                 try:
                     hotkey_is_pressed = self.keyboard_controller.is_hotkey_pressed()
+                    alt_is_pressed = self.keyboard_controller.is_alt_pressed()
                 except Exception:
                     hotkey_is_pressed = False
-
+                    alt_is_pressed = False
+    
                 # trigger screenshots + ocr in manual mode
                 if hotkey_is_pressed and not hotkey_was_pressed and not config.auto_scan_mode:
                     logger.info(f"Input: Hotkey '{config.hotkey}' pressed. Triggering screenshot.")
                     self.shared_state.screenshot_trigger_event.set()
+                # trigger screenshots + ocr in manual mode
+
+                if alt_is_pressed and not alt_was_pressed:
+                    self._was_alt_pressed = True
 
                 # trigger initial screenshots + ocr in auto mode
                 if not self.started_auto_mode and config.auto_scan_mode:
@@ -189,6 +204,7 @@ class InputLoop(threading.Thread):
 
                 last_mouse_pos = current_mouse_pos
                 hotkey_was_pressed = hotkey_is_pressed
+                alt_was_pressed = alt_is_pressed
                 self.hotkey_is_pressed = hotkey_is_pressed
             except:
                 logger.exception("An unexpected error occurred in the input loop. Continuing...")
@@ -196,6 +212,11 @@ class InputLoop(threading.Thread):
                 time.sleep(0.01)
         logger.debug("Input thread stopped.")
 
+    def was_alt_pressed(self):
+        was_pressed = self._was_alt_pressed
+        self._was_alt_pressed = False
+        return was_pressed
+    
     def is_virtual_hotkey_down(self):
         return self.keyboard_controller.is_hotkey_pressed() or (
                 config.auto_scan_mode and config.auto_scan_mode_lookups_without_hotkey)

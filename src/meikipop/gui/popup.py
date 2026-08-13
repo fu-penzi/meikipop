@@ -1,6 +1,7 @@
 # meikipop/gui/popup.py
 import logging
 import threading
+import webbrowser
 from typing import List, Optional
 
 from PyQt6.QtCore import QTimer, QPoint, QSize
@@ -23,13 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 class Popup(QWidget):
-    def __init__(self, shared_state, input_loop):
+    def __init__(self, shared_state, input_loop, scan_mark_popup):
         super().__init__()
         self._latest_data = None
         self._last_latest_data = None
         self._data_lock = threading.Lock()
         self._previous_active_window_on_mac = None
-
+        self.scan_mark_popup = scan_mark_popup
         self.shared_state = shared_state
         self.input_loop = input_loop
 
@@ -158,6 +159,9 @@ class Popup(QWidget):
             return self._latest_data
 
     def process_latest_data_loop(self):
+        if self._latest_data:
+            if self.input_loop.was_alt_pressed() and config.browser_dict:
+                webbrowser.open_new_tab(f'https://jisho.org/search/{self._latest_data[0].written_form}')
         if not self.is_calibrated:
             self._calibrate_empirically()
 
@@ -171,8 +175,10 @@ class Popup(QWidget):
 
         if self._latest_data and self.input_loop.is_virtual_hotkey_down() and config.is_enabled:
             self.show_popup()
+            self.scan_mark_popup.show(self._latest_data)
         else:
             self.hide_popup()
+            self.scan_mark_popup.hide() 
 
         mouse_pos = QCursor.pos()
         self.move_to(mouse_pos.x(), mouse_pos.y())
@@ -237,8 +243,10 @@ class Popup(QWidget):
 
         all_html_parts = []
         max_ratio = 0.0
-
+        max_entries = config.max_popup_entries
         for i, entry in enumerate(entries):
+            if i >= max_entries:
+                break
             if i > 0:
                 all_html_parts.append('<hr style="margin-top: 0px; margin-bottom: 0px;">')
 
@@ -259,17 +267,24 @@ class Popup(QWidget):
             max_ratio = max(max_ratio, header_ratio)
 
             # --- HTML construction ---
-            header_html = f'<span style="color: {config.color_highlight_word}; font-size:{config.font_size_header}px;">{entry.written_form}</span>'
-            if entry.reading: header_html += f' <span style="color: {config.color_highlight_reading}; font-size:{config.font_size_header - 2}px;">[{entry.reading}]</span>'
+            header_html = f''
+            if entry.reading: header_html += f'<div style="color: {config.color_highlight_reading}; font-size:{config.font_size_header * 0.65}px; line-height: 0.7;">{entry.reading}</div>'
+            header_html += f'<div style="color: {config.color_highlight_word}; font-size:{config.font_size_header}px;">{entry.written_form}</div>'
+
+
             if entry.deconjugation_process and config.show_deconjugation:
                 deconj_str = " ← ".join(p for p in entry.deconjugation_process if p)
                 if deconj_str:
                     header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.8;">({deconj_str})</span>'
             if config.show_frequency and entry.freq < 999_999:
-                header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.6;">#{entry.freq}</span>'
+                header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.6;">&nbsp;#{entry.freq}</span>'
+
             def_text_parts_calc = []
             def_text_parts_html = []
+            max_definitions = 4
             for idx, sense in enumerate(entry.senses):
+                if idx >= max_definitions:
+                    break
                 glosses = sense.get('glosses', [])
                 glosses_str = ""
                 if glosses:
@@ -277,7 +292,7 @@ class Popup(QWidget):
                 pos_list  = sense.get('pos', [])
                 tags_list = sense.get('tags', [])
                 sense_calc = f"({idx + 1})" if config.show_all_glosses else ""
-                sense_html = f"<b>({idx + 1})</b> " if config.show_all_glosses else ""
+                sense_html = f"<b>({idx + 1})</b> " if config.show_all_glosses else f""
                 if config.show_pos and pos_list:
                     pos_str = f' ({", ".join(pos_list)})'
                     sense_calc += pos_str
@@ -307,7 +322,7 @@ class Popup(QWidget):
             all_html_parts.append(f"{header_html}{definitions_html_final}")
 
         optimal_content_width = self.max_content_width * min(1.0, max_ratio)
-        optimal_content_width = max(optimal_content_width, 200)
+        optimal_content_width = max(optimal_content_width, 300)
 
         full_html = "".join(all_html_parts)
         self.probe_label.setText(full_html)
@@ -416,7 +431,7 @@ class Popup(QWidget):
         logger.debug("hide_popup releasing lock...")
         self.shared_state.screen_lock.release()
         logger.debug("...successfully released lock by hide_popup")
-
+    
     def show_popup(self):
         # logger.debug(f"show_popup triggered while visibility:{self.is_visible}")
         if self.is_visible:

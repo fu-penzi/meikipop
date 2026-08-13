@@ -98,11 +98,25 @@ class SettingsDialog(QDialog):
         self.max_lookup_spin.setValue(config.max_lookup_length)
         core_layout.addRow("Max Lookup Length:", self.max_lookup_spin)
 
+        self.max_popup_entries_spin = QSpinBox()
+        self.max_popup_entries_spin.setRange(1, 100)
+        self.max_popup_entries_spin.setValue(config.max_popup_entries)
+        core_layout.addRow("Max Popup Entries:", self.max_popup_entries_spin)
         if IS_WINDOWS:
             self.magpie_check = QCheckBox()
             self.magpie_check.setChecked(config.magpie_compatibility)
             self.magpie_check.setToolTip("Enable transformations for compatibility with Magpie game scaler.")
             core_layout.addRow("Magpie Compatibility:", self.magpie_check)
+
+            self.highlight_check = QCheckBox()
+            self.highlight_check.setChecked(config.highlight_enabled)
+            self.highlight_check.setToolTip("Enable word highlighting.")
+            core_layout.addRow("Highlight Words:", self.highlight_check)
+
+        self.browser_dict = QCheckBox()
+        self.browser_dict.setChecked(config.browser_dict)
+        self.browser_dict.setToolTip("Enable browser dictionary on ALT.")
+        core_layout.addRow("Browser Dictionary:", self.browser_dict)
 
         core_group.setLayout(core_layout)
         self.tab_general_layout.addWidget(core_group)
@@ -423,6 +437,7 @@ class SettingsDialog(QDialog):
         config.hotkey = self.hotkey_combo.currentText()
         config.glens_low_bandwidth = self.glens_compression_check.isChecked()
         config.max_lookup_length = self.max_lookup_spin.value()
+        config.max_popup_entries = self.max_popup_entries_spin.value()
         config.auto_scan_mode = self.auto_scan_check.isChecked()
         config.auto_scan_interval_seconds = self.auto_scan_interval_spin.value()
         config.auto_scan_mode_lookups_without_hotkey = self.auto_scan_no_hotkey_check.isChecked()
@@ -430,6 +445,8 @@ class SettingsDialog(QDialog):
 
         if IS_WINDOWS:
             config.magpie_compatibility = self.magpie_check.isChecked()
+            config.highlight_enabled = self.highlight_check.isChecked()
+        config.browser_dict = self.browser_dict.isChecked()
         config.compact_mode = self.compact_check.isChecked()
         config.show_all_glosses = self.show_glosses_check.isChecked()
         config.show_deconjugation = self.show_deconj_check.isChecked()

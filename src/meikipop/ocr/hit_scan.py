@@ -10,12 +10,13 @@ logger = logging.getLogger(__name__)  # Get the logger
 
 
 class HitScanner(threading.Thread):
-    def __init__(self, shared_state, input_loop, screen_manager):
+    def __init__(self, shared_state, input_loop, screen_manager, scan_mark_popup):
         super().__init__(daemon=True, name="HitScanner")
         self.shared_state = shared_state
         self.input_loop = input_loop
         self.screen_manager = screen_manager
         self.last_ocr_result = None
+        self.scan_mark_popup = scan_mark_popup
 
     def run(self):
         logger.debug("HitScanner thread started.")
@@ -93,6 +94,10 @@ class HitScanner(threading.Thread):
                     char_percent = max(0.0, min(relative_x_in_box / target_word.box.width, 1.0))
                     char_offset = int(char_percent * len(target_word.text))
 
+                    top_edge = target_word.box.center_y - (target_word.box.height / 2)
+                    self.scan_mark_popup.set_fixed_height(int(target_word.box.height * img_h))
+                    self.scan_mark_popup.move(mouse_off_x + left_edge * img_w, mouse_off_y + top_edge * img_h)
+
             char_offset = min(char_offset, len(target_word.text) - 1)
 
             word_start_index = 0
@@ -100,6 +105,9 @@ class HitScanner(threading.Thread):
                 if word is target_word:
                     break
                 word_start_index += len(word.text)
+
+            self.scan_mark_popup.words = para.words[word_start_index:]
+            self.scan_mark_popup.img_w = img_w
 
             final_char_index = word_start_index + char_offset
             full_text = para.full_text

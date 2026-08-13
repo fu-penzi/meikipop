@@ -17,6 +17,7 @@ from meikipop.ocr.hit_scan import HitScanner
 from meikipop.ocr.ocr import OcrProcessor
 from meikipop.screenshot.screenmanager import ScreenManager
 from meikipop.utils.lastest_queue import LatestValueQueue
+from meikipop.gui.scan_mark_popup import ScanMarkPopup
 
 
 def qt_message_handler(mode, context, message):
@@ -55,13 +56,14 @@ def run_gui():
     app.setQuitOnLastWindowClosed(False)
 
     input_loop = InputLoop(shared_state)
-    popup_window = Popup(shared_state, input_loop)
+    scan_mark_popup = ScanMarkPopup()
+    popup_window = Popup(shared_state, input_loop, scan_mark_popup)
 
     screen_manager = ScreenManager(shared_state, input_loop)  # trigger region selection
     lookup = Lookup(shared_state, popup_window)  # load dictionary
 
     ocr_processor = OcrProcessor(shared_state, screen_manager)
-    hit_scanner = HitScanner(shared_state, input_loop, screen_manager)
+    hit_scanner = HitScanner(shared_state, input_loop, screen_manager,scan_mark_popup)
     tray_icon = TrayIcon(screen_manager, ocr_processor, popup_window, input_loop, lookup)
 
     for t in [lookup, hit_scanner, ocr_processor, screen_manager, input_loop]:

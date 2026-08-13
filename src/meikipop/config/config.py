@@ -32,13 +32,16 @@ class Config:
             'hotkey': 'shift',
             'scan_region': 'region',
             'max_lookup_length': 25,
+            'max_popup_entries': 1,
             'glens_low_bandwidth': False,
             'ocr_provider': 'meikiocr (local)',
             'auto_scan_mode': True,
             'auto_scan_mode_lookups_without_hotkey': True,
             'auto_scan_interval_seconds': 0.5,
             'auto_scan_on_mouse_move': True,
-            'magpie_compatibility': True
+            'magpie_compatibility': True,
+            'highlight_enabled': True,
+            'browser_dict': True,
         },
         'Theme': {
             'theme_name': 'Nazeka',
