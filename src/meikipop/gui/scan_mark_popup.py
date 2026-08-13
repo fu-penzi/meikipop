@@ -68,26 +68,24 @@ class ScanMarkPopup(QWidget):
             self.hide()
             return
 
-        if entries[0].written_form == self.current_marked_text:
-            return
-        self.current_marked_text = entries[0].written_form
-
-        char_num = len(self.current_marked_text)
-        width = 0
-        last_word_idx = 0
-        for word in self.words:
-            if char_num <= 0:
-                 break
-            char_num -= len(word.text)
-            last_word_idx += 1
-        last_word_idx = max(0, last_word_idx - 1)
-
-        left_edge = self.words[0].box.center_x - (self.words[0].box.width / 2)
-        right_edge = self.words[last_word_idx].box.center_x + (self.words[last_word_idx].box.width / 2)
-        width = right_edge - left_edge
+        if entries[0].written_form != self.current_marked_text:
+            self.current_marked_text = entries[0].written_form
+            char_num = len(self.current_marked_text)
+            width = 0
+            last_word_idx = 0
+            for word in self.words:
+                if char_num <= 0:
+                    break
+                char_num -= len(word.text)
+                last_word_idx += 1
+            last_word_idx = max(0, last_word_idx - 1)
+            left_edge = self.words[0].box.center_x - (self.words[0].box.width / 2)
+            right_edge = self.words[last_word_idx].box.center_x + (self.words[last_word_idx].box.width / 2)
+            width = right_edge - left_edge
+            self.width = width
 
         super().move(self.x, self.y)
-        super().setFixedWidth(int(width * self.img_w / self.devicePixelRatio))
+        super().setFixedWidth(int(self.width * self.img_w / self.devicePixelRatio))
         super().setFixedHeight(self.height)
         if not self.is_visible:
             super().show()
