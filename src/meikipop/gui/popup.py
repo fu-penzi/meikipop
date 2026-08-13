@@ -276,9 +276,6 @@ class Popup(QWidget):
             else:
                 color = config.color_foreground
 
-            if config.show_frequency and entry.freq < 999_999:
-                header_html += f' <div style="color: {color}; font-size:{config.font_size_definitions - 2}px; line-height: 0.8;">&nbsp;#{entry.freq}</div>'
-
             if entry.reading: header_html += f'<div style="color: {color}; font-size:{config.font_size_header * 0.65}px; line-height: 0.7;">{entry.reading}</div>'
             header_html += f'<div style="color: {color}; font-size:{config.font_size_header}px;">{entry.written_form}</div>'
 
@@ -287,6 +284,8 @@ class Popup(QWidget):
                 deconj_str = " ← ".join(p for p in entry.deconjugation_process if p)
                 if deconj_str:
                     header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.8;">({deconj_str})</span>'
+            if config.show_frequency and entry.freq < 999_999:
+                header_html += f' <span style="color: {color}; font-size:{config.font_size_definitions - 2}px; line-height: 0.8;">&nbsp;#{entry.freq}</span>'
 
             def_text_parts_calc = []
             def_text_parts_html = []
