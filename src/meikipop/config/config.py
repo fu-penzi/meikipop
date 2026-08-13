@@ -59,8 +59,8 @@ class Config:
             'show_components': True,
             'color_background': '#2E2E2E',
             'color_foreground': '#F0F0F0',
-            'color_highlight_word': '#88D8FF',
-            'color_highlight_reading': '#90EE90',
+            'color_common_word': '#88D8FF',
+            'color_rare_word': '#90EE90',
             'background_opacity': 245,
             'popup_position_mode': 'visual_novel_mode'
         }

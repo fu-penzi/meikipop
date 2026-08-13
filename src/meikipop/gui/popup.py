@@ -63,7 +63,7 @@ class Popup(QWidget):
         main_layout.addWidget(self.frame)
 
         self.content_layout = QVBoxLayout(self.frame)
-        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setContentsMargins(10, 5, 10, 10)
 
         self.display_label = QLabel()
         self.display_label.setWordWrap(True)
@@ -268,16 +268,25 @@ class Popup(QWidget):
 
             # --- HTML construction ---
             header_html = f''
-            if entry.reading: header_html += f'<div style="color: {config.color_highlight_reading}; font-size:{config.font_size_header * 0.65}px; line-height: 0.7;">{entry.reading}</div>'
-            header_html += f'<div style="color: {config.color_highlight_word}; font-size:{config.font_size_header}px;">{entry.written_form}</div>'
+
+            if entry.freq < 10_000:
+                color =  config.color_common_word
+            elif entry.freq < 20_000:
+                color = config.color_rare_word
+            else:
+                color = config.color_foreground
+
+            if config.show_frequency and entry.freq < 999_999:
+                header_html += f' <div style="color: {color}; font-size:{config.font_size_definitions - 2}px; line-height: 0.8;">&nbsp;#{entry.freq}</div>'
+
+            if entry.reading: header_html += f'<div style="color: {color}; font-size:{config.font_size_header * 0.65}px; line-height: 0.7;">{entry.reading}</div>'
+            header_html += f'<div style="color: {color}; font-size:{config.font_size_header}px;">{entry.written_form}</div>'
 
 
             if entry.deconjugation_process and config.show_deconjugation:
                 deconj_str = " ← ".join(p for p in entry.deconjugation_process if p)
                 if deconj_str:
                     header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.8;">({deconj_str})</span>'
-            if config.show_frequency and entry.freq < 999_999:
-                header_html += f' <span style="color:{config.color_foreground}; font-size:{config.font_size_definitions - 2}px; opacity:0.6;">&nbsp;#{entry.freq}</span>'
 
             def_text_parts_calc = []
             def_text_parts_html = []
